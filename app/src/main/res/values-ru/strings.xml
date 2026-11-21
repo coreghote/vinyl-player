@@ -10,6 +10,7 @@
     <string name="close">Закрыть</string>
     <string name="spin_speed">Скорость вращения диска</string>
     <string name="hide_status_bar">Скрыть статус-бар</string>
+    <string name="keep_screen_on">Не гасить экран</string>
     <string name="theme">Тема</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>

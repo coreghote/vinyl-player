@@ -42,5 +42,7 @@ The cover rotates with the record.
 App name: **винИИла**. A settings section, opened by tapping the tonearm pivot, must contain:
 1. A slider for the visual disc rotation speed; the current speed is **100 %**.
 2. A "hide the status bar" switch.
-3. A theme choice: light / dark / system.
+3. A theme choice: light / dark / system (the tonearm is dark in the dark theme).
+4. A "keep the screen on" switch.
+While the settings are open the turntable underneath must not react to touches; it must react again once closed.
 Settings must actually work and nothing that existed before may break.

@@ -9,25 +9,33 @@ import android.graphics.RectF
 import android.graphics.Shader
 import kotlin.math.max
 
-/** Draws the white tonearm + its translucent housing. Cheap enough to run every frame. */
-class TonearmPainter(g: Geo) {
+/**
+ * Draws the tonearm + its translucent housing: cream/white in the light theme, dark metal in the
+ * dark one. Cheap enough to run every frame.
+ */
+class TonearmPainter(g: Geo, dark: Boolean = false) {
     private val w = g.w
     private val px = g.pivot.x
     private val py = g.pivot.y
     private val len = g.armLen
     private val tubeW = w * 0.017f
 
-    private val body = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF6F3EC.toInt() }
-    private val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEDE9DF.toInt() }
+    private val body = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (dark) 0xFF3B3936.toInt() else 0xFFF6F3EC.toInt()
+    }
+    private val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (dark) 0xFF2E2C29.toInt() else 0xFFEDE9DF.toInt()
+    }
     private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = max(1f, w * 0.0025f)
-        color = 0xFFD8D2C6.toInt()
+        color = if (dark) 0x33FFFFFF else 0xFFD8D2C6.toInt()
     }
     private val tube = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         shader = LinearGradient(
             px - tubeW / 2f, 0f, px + tubeW / 2f, 0f,
-            intArrayOf(0xFF8E9297.toInt(), 0xFFE8EAEC.toInt(), 0xFFB4B8BC.toInt(), 0xFF84888D.toInt()),
+            if (dark) intArrayOf(0xFF4C5054.toInt(), 0xFFB9BDC1.toInt(), 0xFF7A7E82.toInt(), 0xFF44484C.toInt())
+            else intArrayOf(0xFF8E9297.toInt(), 0xFFE8EAEC.toInt(), 0xFFB4B8BC.toInt(), 0xFF84888D.toInt()),
             floatArrayOf(0f, 0.35f, 0.7f, 1f),
             Shader.TileMode.CLAMP,
         )
@@ -35,11 +43,11 @@ class TonearmPainter(g: Geo) {
     private val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
 
     private val housing = RectF(w * 0.722f, w * 0.174f, w * 0.989f, w * 0.569f)
-    private val housingFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x30FFFFFF }
+    private val housingFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = if (dark) 0x14FFFFFF else 0x30FFFFFF }
     private val housingStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = max(1f, w * 0.002f)
-        color = 0x55808080
+        color = if (dark) 0x2EFFFFFF else 0x55808080
     }
 
     private val blockMain = RectF(px - w * 0.120f, py - w * 0.085f, px - w * 0.010f, py + w * 0.030f)

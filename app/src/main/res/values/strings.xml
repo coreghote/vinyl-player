@@ -10,6 +10,7 @@
     <string name="close">Close</string>
     <string name="spin_speed">Disc rotation speed</string>
     <string name="hide_status_bar">Hide status bar</string>
+    <string name="keep_screen_on">Keep screen on</string>
     <string name="theme">Theme</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

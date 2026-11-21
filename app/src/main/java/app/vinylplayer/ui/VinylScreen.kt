@@ -145,6 +145,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, pal: VinylPalett
     val armLift = remember { Animatable(1f) }
 
     var showSettings by remember { mutableStateOf(false) }
+    val settingsOpen by rememberUpdatedState(showSettings)
     val speedFactor by rememberUpdatedState(AppSettings.spinSpeed)
 
     var discAngle by remember { mutableFloatStateOf(0f) }
@@ -310,7 +311,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, pal: VinylPalett
         shader.setLocalMatrix(m)
         Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader }
     }
-    val arm = remember(geo) { TonearmPainter(geo) }
+    val arm = remember(geo, pal) { TonearmPainter(geo, dark = pal === DarkPalette) }
 
     // ------------------------------------------------------------------ UI
     Box(
@@ -319,6 +320,12 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, pal: VinylPalett
             .pointerInput(geo) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    if (settingsOpen) {
+                        // the panel owns the input: swallow the rest of this gesture and return its
+                        // reaction on the next one after the panel closes
+                        waitForUpOrCancellation()
+                        return@awaitEachGesture
+                    }
                     // tap on the tonearm pivot = settings (works even with no session)
                     if ((down.position - geo.pivot).getDistance() < geo.w * 0.09f) {
                         val up = waitForUpOrCancellation()

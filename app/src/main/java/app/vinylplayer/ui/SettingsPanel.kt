@@ -84,6 +84,12 @@ fun SettingsPanel(p: VinylPalette, onClose: () -> Unit) {
                 Toggle(AppSettings.hideStatusBar, p) { AppSettings.updateHideStatusBar(it) }
             }
 
+            // --- keep screen on
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Label(stringResource(R.string.keep_screen_on), p.title, 16, FontWeight.Medium, Modifier.weight(1f))
+                Toggle(AppSettings.keepScreenOn, p) { AppSettings.updateKeepScreenOn(it) }
+            }
+
             // --- theme
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Label(stringResource(R.string.theme), p.title, 16, FontWeight.Medium)

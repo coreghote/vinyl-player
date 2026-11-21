@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
+import android.view.WindowManager
 import android.service.notification.NotificationListenerService
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -57,6 +58,12 @@ class MainActivity : ComponentActivity() {
                 if (hide) c.hide(WindowInsetsCompat.Type.statusBars())
                 else c.show(WindowInsetsCompat.Type.statusBars())
                 onDispose { c.show(WindowInsetsCompat.Type.statusBars()) }
+            }
+            val keepOn = AppSettings.keepScreenOn
+            DisposableEffect(keepOn) {
+                if (keepOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
             }
             VinylScreen(hasAccess = hasAccess, dark = dark, onOpenSettings = ::openListenerSettings)
         }

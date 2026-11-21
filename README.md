@@ -10,7 +10,8 @@ label, the record colour/style is derived from the cover, the tonearm tracks pla
 | Swipe left / right | next / previous track |
 | Tap the tonearm pivot | settings |
 
-Settings: disc rotation speed (25–200 %, 100 % = original), hide the status bar, theme (light / dark / system).
+Settings: disc rotation speed (25–200 %, 100 % = original), hide the status bar, keep the screen on, theme
+(light / dark / system). While the panel is open the turntable ignores touches.
 
 ## Install
 1. Download `vinyl-player.apk` from the **Latest build** release (Releases page) or from the latest workflow run's

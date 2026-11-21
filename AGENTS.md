@@ -19,8 +19,9 @@ the layout/proportions in `ui/Geo.kt` were measured from these (720x1560 px).
   `drawImage` on a full-screen canvas at absolute `geo` coordinates (a laid-out child wider than the screen got
   clamped/re-centred, so the visible disc centre did not match `geo.cx/cy`; gestures and the title use `geo`).
 - **Settings section** (added 2026-11-21): app name is now «винИИла»; tapping the tonearm pivot opens a bottom
-  sheet (`ui/SettingsPanel.kt`) with spin-speed 25–200 % (100 % = the old speed, sticky at 100), "hide status bar"
-  and theme light/dark/system. Preferences live in `Settings.kt` (`AppSettings`, SharedPreferences-backed Compose
+  sheet (`ui/SettingsPanel.kt`) with spin-speed 25–200 % (100 % = the old speed, sticky at 100), "hide status bar",
+  "keep screen on" (`FLAG_KEEP_SCREEN_ON`) and theme light/dark/system; while it is open the root gesture handler
+  ignores everything (`settingsOpen` via `rememberUpdatedState`, never restart the pointerInput). Preferences live in `Settings.kt` (`AppSettings`, SharedPreferences-backed Compose
   state). Verified on the emulator: panel opens by pivot tap, closes by scrim/Close/Back, slider, toggle, all three
   themes (system follows `uiMode` live), status bar hides without the black top strip, everything survives a restart
   and the bar stays hidden after returning from the Notification-access screen. Not verified: the speed factor while
@@ -80,6 +81,9 @@ ui/TonearmPainter.kt        Tonearm + housing, android.graphics canvas, blur sha
 | Tap tonearm pivot = settings | early return in the root pointerInput before the session/swipeLock guards, so it also works with no session |
 | Spin speed setting | `discAngle` += `200·spin·AppSettings.spinSpeed`; 100 % is the previous speed |
 | Theme / status bar | `MainActivity` + `ui/VinylScreen.kt` palettes; `enableEdgeToEdge` **must** run in `onCreate` before the first layout, and `onResume` re-applies `hide(statusBars)` (otherwise the window gets the status-bar inset and leaves a black strip / the bar comes back after the system settings activity) |
+| Dark theme touches the drawing too | the palette is passed to `TonearmPainter` (`dark = pal === DarkPalette`): dark metal tube, dark pivot blocks, faint housing |
+| Settings panel blocks the screen | `awaitFirstDown` → `if (settingsOpen) { waitForUpOrCancellation(); return }`; the flag is read through `rememberUpdatedState`, so the same gesture detector resumes working the moment the panel closes (no `pointerInput` key change, no busy loop) |
+| Keep screen on | `MainActivity` DisposableEffect → `FLAG_KEEP_SCREEN_ON`, persisted in `AppSettings` |
 | Info only below, no buttons | Title/artist `BasicText`. The only button is the "open notification settings" pill, shown while access is missing |
 | Record look follows the cover | `VinylDesigner.design()` (Palette swatch → HSL-tuned base colour, accent, style) |
 

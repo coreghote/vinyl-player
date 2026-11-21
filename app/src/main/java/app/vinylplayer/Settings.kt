@@ -18,6 +18,7 @@ object AppSettings {
     /** Visual rotation speed factor; 1.0 = 100 % (the original speed). */
     var spinSpeed by mutableFloatStateOf(1f); private set
     var hideStatusBar by mutableStateOf(false); private set
+    var keepScreenOn by mutableStateOf(false); private set
     var theme by mutableStateOf(ThemeMode.SYSTEM); private set
 
     fun init(context: Context) {
@@ -26,6 +27,7 @@ object AppSettings {
         prefs = p
         spinSpeed = p.getFloat("spin", 1f).coerceIn(SPEED_MIN, SPEED_MAX)
         hideStatusBar = p.getBoolean("hide_status", false)
+        keepScreenOn = p.getBoolean("keep_screen_on", false)
         theme = runCatching { ThemeMode.valueOf(p.getString("theme", null) ?: "") }.getOrDefault(ThemeMode.SYSTEM)
     }
 
@@ -37,6 +39,11 @@ object AppSettings {
     fun updateHideStatusBar(v: Boolean) {
         hideStatusBar = v
         prefs?.edit()?.putBoolean("hide_status", v)?.apply()
+    }
+
+    fun updateKeepScreenOn(v: Boolean) {
+        keepScreenOn = v
+        prefs?.edit()?.putBoolean("keep_screen_on", v)?.apply()
     }
 
     fun updateTheme(v: ThemeMode) {
