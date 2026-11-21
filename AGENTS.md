@@ -18,6 +18,13 @@ the layout/proportions in `ui/Geo.kt` were measured from these (720x1560 px).
   cut the square's black corners — `VinylRenderer.clearOutsideCircle` now does), and the record is drawn with
   `drawImage` on a full-screen canvas at absolute `geo` coordinates (a laid-out child wider than the screen got
   clamped/re-centred, so the visible disc centre did not match `geo.cx/cy`; gestures and the title use `geo`).
+- **Settings section** (added 2026-11-21): app name is now «винИИла»; tapping the tonearm pivot opens a bottom
+  sheet (`ui/SettingsPanel.kt`) with spin-speed 25–200 % (100 % = the old speed, sticky at 100), "hide status bar"
+  and theme light/dark/system. Preferences live in `Settings.kt` (`AppSettings`, SharedPreferences-backed Compose
+  state). Verified on the emulator: panel opens by pivot tap, closes by scrim/Close/Back, slider, toggle, all three
+  themes (system follows `uiMode` live), status bar hides without the black top strip, everything survives a restart
+  and the bar stays hidden after returning from the Notification-access screen. Not verified: the speed factor while
+  a track is actually playing (no media session on the emulator).
 - **Still unverified: anything that needs a real MediaSession** — spin, tonearm follow/drag, tap-to-pause, swipe
   next/previous. There is no player app on the emulator, so install on a phone and grant notification access.
 - Implemented: media-session tracking, record rendering (6 styles), spin, tonearm, all gestures, swipe animation,
@@ -48,6 +55,8 @@ media/NowPlayingRepo.kt     Singleton. StateFlow<NowPlaying> + commands (play/pa
                             ALL active sessions so a paused->playing change in a non-current session is noticed.
                             Loads cover from bitmap keys or from *_URI (content:// or https://). Commands apply an
                             optimistic state update; the player's callback confirms/corrects it.
+Settings.kt                 AppSettings singleton: spin speed, hide status bar, theme; SharedPreferences + Compose state.
+ui/SettingsPanel.kt         Bottom-sheet settings dialog (slider, toggle, theme segments), opened from the pivot.
 media/NowPlaying.kt         Snapshot + position interpolation (positionNow()/progressNow()).
 MainActivity.kt             Edge-to-edge host; checks notification access in onResume, calls requestRebind().
 ui/VinylScreen.kt           The whole screen: state machine, gestures, animations (see below).
@@ -68,6 +77,9 @@ ui/TonearmPainter.kt        Tonearm + housing, android.graphics canvas, blur sha
 | Head moves while playing | arm effect: `angleForProgress(progressNow())` every frame (position is interpolated from the last PlaybackState) |
 | Pause lifts head / lifting head pauses | arm effect parks (angle 0, lift 1) when not playing; `beginArm` calls `pause()`; releasing the head on the record = `seekTo` + `play()`, releasing it off the record stays paused |
 | Swipe left/right = next/previous with animation | horizontal drag moves record+text (`swipeX`); release past 20 % W or fling → slide out, `next()/previous()`, new record slides in from the opposite side once its bitmap is rendered; 1.6 s fallback springs back if the player ignores the command |
+| Tap tonearm pivot = settings | early return in the root pointerInput before the session/swipeLock guards, so it also works with no session |
+| Spin speed setting | `discAngle` += `200·spin·AppSettings.spinSpeed`; 100 % is the previous speed |
+| Theme / status bar | `MainActivity` + `ui/VinylScreen.kt` palettes; `enableEdgeToEdge` **must** run in `onCreate` before the first layout, and `onResume` re-applies `hide(statusBars)` (otherwise the window gets the status-bar inset and leaves a black strip / the bar comes back after the system settings activity) |
 | Info only below, no buttons | Title/artist `BasicText`. The only button is the "open notification settings" pill, shown while access is missing |
 | Record look follows the cover | `VinylDesigner.design()` (Palette swatch → HSL-tuned base colour, accent, style) |
 
@@ -90,12 +102,13 @@ ui/TonearmPainter.kt        Tonearm + housing, android.graphics canvas, blur sha
 1. Push so GitHub Actions runs, install on a real phone with notification access and check the media-session
    behaviour (tonearm hit area, swipe feel, colours, cover label) — the emulator can only show the two empty states.
 2. Tune geometry/visuals against `docs/reference/` screenshots (arm shape, head tilt, label size, grain).
-3. More record styles for the collection (translucent, galaxy/stars, tri-colour, picture-disc, glitter) — add to
+3. Settings: maybe a "keep spinning while paused" switch, or a separate setting for the tonearm speed.
+4. More record styles for the collection (translucent, galaxy/stars, tri-colour, picture-disc, glitter) — add to
    `VinylStyle`, `VinylRenderer.drawSurface`, and the pools in `VinylDesigner.design`.
-4. Fallback cover when a player gives none (notification large icon via `StatusBarNotification` in the listener).
-5. Optional: keep-screen-on / dock mode, landscape layout, haptic tick when the head lands, needle-drop sound.
-6. Optional: release signing from GitHub secrets, R8 + baseline profile, app icon polish.
-7. Unit tests for `Geo` (angle maths) and `NowPlaying.positionNow`.
+5. Fallback cover when a player gives none (notification large icon via `StatusBarNotification` in the listener).
+6. Optional: keep-screen-on / dock mode, landscape layout, haptic tick when the head lands, needle-drop sound.
+7. Optional: release signing from GitHub secrets, R8 + baseline profile, app icon polish.
+8. Unit tests for `Geo` (angle maths) and `NowPlaying.positionNow`.
 
 ## Working agreements
 - Keep `docs/SPEC.md` as the source of truth for requirements; don't silently drop a requirement.

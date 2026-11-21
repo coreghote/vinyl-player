@@ -15,11 +15,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vinylplayer.AppSettings
 import app.vinylplayer.R
 import app.vinylplayer.media.NowPlaying
 import app.vinylplayer.media.NowPlayingRepo
@@ -76,9 +79,23 @@ import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val BgColor = Color(0xFFEFEDE8)
-private val TitleColor = Color(0xFF2F2F2F)
-private val SubtitleColor = Color(0xFF8E8C88)
+/** Colours of the screen and settings panel for the light / dark theme. */
+class VinylPalette(
+    val bg: Color, val title: Color, val subtitle: Color,
+    val panel: Color, val track: Color, val accent: Color, val onAccent: Color,
+    val grain: Int,
+)
+
+private val LightPalette = VinylPalette(
+    Color(0xFFEFEDE8), Color(0xFF2F2F2F), Color(0xFF8E8C88),
+    Color(0xFFF8F6F1), Color(0xFFDAD6CE), Color(0xFF2F2F2F), Color.White,
+    android.graphics.Color.rgb(90, 80, 70),
+)
+private val DarkPalette = VinylPalette(
+    Color(0xFF1B1A19), Color(0xFFEDEBE6), Color(0xFF9A9791),
+    Color(0xFF2A2927), Color(0xFF45433F), Color(0xFFEDEBE6), Color(0xFF1B1A19),
+    android.graphics.Color.rgb(200, 190, 180),
+)
 
 /** What is currently drawn: pre-rendered record + the text that goes with it. */
 private class ShownDisc(
@@ -97,19 +114,20 @@ private class Motion {
 }
 
 @Composable
-fun VinylScreen(hasAccess: Boolean, onOpenSettings: () -> Unit) {
+fun VinylScreen(hasAccess: Boolean, dark: Boolean, onOpenSettings: () -> Unit) {
     val np by NowPlayingRepo.state.collectAsState()
-    BoxWithConstraints(Modifier.fillMaxSize().background(BgColor)) {
+    val pal = if (dark) DarkPalette else LightPalette
+    BoxWithConstraints(Modifier.fillMaxSize().background(pal.bg)) {
         val density = LocalDensity.current
         val wPx = with(density) { maxWidth.toPx() }
         val hPx = with(density) { maxHeight.toPx() }
         val geo = remember(wPx, hPx) { Geo(wPx, hPx) }
-        Scene(np, geo, hasAccess, onOpenSettings)
+        Scene(np, geo, hasAccess, pal, onOpenSettings)
     }
 }
 
 @Composable
-private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: () -> Unit) {
+private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, pal: VinylPalette, onOpenSettings: () -> Unit) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val latestNp by rememberUpdatedState(np)
@@ -125,6 +143,9 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
     var dragAngle by remember { mutableFloatStateOf(0f) }
     val armAngle = remember { Animatable(0f) }
     val armLift = remember { Animatable(1f) }
+
+    var showSettings by remember { mutableStateOf(false) }
+    val speedFactor by rememberUpdatedState(AppSettings.spinSpeed)
 
     var discAngle by remember { mutableFloatStateOf(0f) }
     val spin = remember { Animatable(0f) }
@@ -169,7 +190,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
         while (true) {
             withFrameNanos { t ->
                 if (last != 0L) {
-                    discAngle = (discAngle + spin.value * 200f * ((t - last) / 1_000_000_000f)) % 360f
+                    discAngle = (discAngle + spin.value * 200f * speedFactor * ((t - last) / 1_000_000_000f)) % 360f
                 }
                 last = t
             }
@@ -260,11 +281,14 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
     }
 
     // ------------------------------------------------------------------ drawing helpers
-    val noisePaint = remember {
+    val noisePaint = remember(pal) {
         val bmp = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888)
         val rnd = java.util.Random(7)
+        val r = android.graphics.Color.red(pal.grain)
+        val g = android.graphics.Color.green(pal.grain)
+        val b = android.graphics.Color.blue(pal.grain)
         for (y in 0 until 128) for (x in 0 until 128) {
-            bmp.setPixel(x, y, android.graphics.Color.argb(rnd.nextInt(16), 90, 80, 70))
+            bmp.setPixel(x, y, android.graphics.Color.argb(rnd.nextInt(16), r, g, b))
         }
         Paint().apply { shader = BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT) }
     }
@@ -295,6 +319,12 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
             .pointerInput(geo) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    // tap on the tonearm pivot = settings (works even with no session)
+                    if ((down.position - geo.pivot).getDistance() < geo.w * 0.09f) {
+                        val up = waitForUpOrCancellation()
+                        if (up != null) showSettings = true
+                        return@awaitEachGesture
+                    }
                     if (swipeLock || !latestNp.hasSession) return@awaitEachGesture
 
                     val slop = viewConfiguration.touchSlop
@@ -415,7 +445,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
-                    color = TitleColor,
+                    color = pal.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = with(density) { (geo.w * 0.05f).toSp() },
                 ),
@@ -426,7 +456,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
-                    color = SubtitleColor,
+                    color = pal.subtitle,
                     fontWeight = FontWeight.Light,
                     fontSize = with(density) { (geo.w * 0.039f).toSp() },
                 ),
@@ -439,7 +469,7 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
                 Modifier
                     .offset { IntOffset((geo.w * 0.078f).roundToInt(), (geo.h * 0.86f).roundToInt()) }
                     .clip(RoundedCornerShape(50))
-                    .background(TitleColor)
+                    .background(pal.title)
                     .clickable(onClick = onOpenSettings)
                     .padding(horizontal = 22.dp, vertical = 12.dp),
             ) {
@@ -448,6 +478,11 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
                     style = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium),
                 )
             }
+        }
+
+        if (showSettings) {
+            BackHandler { showSettings = false }
+            SettingsPanel(pal) { showSettings = false }
         }
     }
 }

@@ -37,3 +37,10 @@ Layout facts measured from them (720x1560): record radius ≈ 0.607·W, centre �
 left edge; label (cover) radius ≈ 0.446 of the record; tonearm pivot top-right with a translucent rounded housing;
 title bold ≈ 0.05·W at y ≈ 0.73·H, artist light grey below it; warm off-white paper background (#EFEDE8).
 The cover rotates with the record.
+
+## Addendum (owner request, 2026-11-21)
+App name: **винИИла**. A settings section, opened by tapping the tonearm pivot, must contain:
+1. A slider for the visual disc rotation speed; the current speed is **100 %**.
+2. A "hide the status bar" switch.
+3. A theme choice: light / dark / system.
+Settings must actually work and nothing that existed before may break.
