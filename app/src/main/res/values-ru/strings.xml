@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Виниловый плеер</string>
+    <string name="need_access_title">Нужен доступ к уведомлениям</string>
+    <string name="need_access_hint">Чтобы видеть, что играет в других приложениях</string>
+    <string name="grant_access">Открыть настройки</string>
+    <string name="nothing_playing">Ничего не играет</string>
+    <string name="start_music">Включите музыку в любом плеере</string>
+</resources>

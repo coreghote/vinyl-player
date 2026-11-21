@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vinyl Player</string>
+    <string name="need_access_title">Allow notification access</string>
+    <string name="need_access_hint">Needed to see what other apps are playing</string>
+    <string name="grant_access">Open settings</string>
+    <string name="nothing_playing">Nothing playing</string>
+    <string name="start_music">Start music in any player app</string>
+</resources>
