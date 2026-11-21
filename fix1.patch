@@ -1,0 +1,28 @@
+From 6b4e0dbdbd3042130800fc5a35ac7f91201bf891 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 21 Nov 2026 21:11:26 +0700
+Subject: [PATCH] Fix NotificationManagerCompat API name (first CI compile
+ error)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012tjkqpV9EHeLBtLLUjT1zz
+---
+ app/src/main/java/app/vinylplayer/MainActivity.kt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/app/src/main/java/app/vinylplayer/MainActivity.kt b/app/src/main/java/app/vinylplayer/MainActivity.kt
+index 92e97f5..d329935 100644
+--- a/app/src/main/java/app/vinylplayer/MainActivity.kt
++++ b/app/src/main/java/app/vinylplayer/MainActivity.kt
+@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
+ 
+     override fun onResume() {
+         super.onResume()
+-        hasAccess = NotificationManagerCompat.getEnabledListenerPackageNames(this).contains(packageName)
++        hasAccess = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
+         if (hasAccess && !NowPlayingRepo.serviceConnected) {
+             // the system sometimes leaves a granted listener unbound (e.g. after an app update)
+             NotificationListenerService.requestRebind(ComponentName(this, NowPlayingService::class.java))
+-- 
+2.43.0
+

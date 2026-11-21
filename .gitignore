@@ -7,3 +7,5 @@ local.properties
 captures/
 .cxx/
 dist/
+# local JDK/SDK/AVD/Gradle-cache bundle, see reusable/README.md (multi-GB, not for git)
+reusable/

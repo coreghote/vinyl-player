@@ -39,15 +39,12 @@ object VinylRenderer {
         val labelR = r * LABEL
         val rnd = Random(spec.seed)
 
-        // Draw the surface in a layer and mask it with an anti-aliased circle.
-        val layer = c.saveLayer(0f, 0f, s, s, null)
+        // Paint the square surface, then clear everything outside the record circle.
+        // (A DST_IN circle drawn over the surface would only touch the pixels *inside* it, i.e. it
+        // would do nothing; CLEAR on the complement actually cuts the black corners away.)
         drawSurface(c, spec, cx, r, rnd)
         drawGrooves(c, cx, r, labelR)
-        val mask = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
-        }
-        c.drawCircle(cx, cx, r - 1f, mask)
-        c.restoreToCount(layer)
+        clearOutsideCircle(c, s, cx, r - 1f)
 
         drawRim(c, cx, r)
         drawLabel(c, spec, art, title, cx, labelR, r)
@@ -55,6 +52,16 @@ object VinylRenderer {
     }
 
     // ------------------------------------------------------------------ surface
+
+    private fun clearOutsideCircle(c: Canvas, size: Float, cx: Float, r: Float) {
+        val outside = Path().apply {
+            addRect(0f, 0f, size, size, Path.Direction.CW)
+            op(Path().apply { addCircle(cx, cx, r, Path.Direction.CW) }, Path.Op.DIFFERENCE)
+        }
+        c.drawPath(outside, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+        })
+    }
 
     private fun drawSurface(c: Canvas, spec: VinylSpec, cx: Float, r: Float, rnd: Random) {
         val size = cx * 2f

@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        hasAccess = NotificationManagerCompat.getEnabledListenerPackageNames(this).contains(packageName)
+        hasAccess = NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
         if (hasAccess && !NowPlayingRepo.serviceConnected) {
             // the system sometimes leaves a granted listener unbound (e.g. after an app update)
             NotificationListenerService.requestRebind(ComponentName(this, NowPlayingService::class.java))

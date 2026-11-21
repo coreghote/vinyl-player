@@ -16,7 +16,6 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -30,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -53,6 +51,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -63,6 +62,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vinylplayer.R
@@ -353,28 +353,26 @@ private fun Scene(np: NowPlaying, geo: Geo, hasAccess: Boolean, onOpenSettings: 
             drawIntoCanvas { it.nativeCanvas.drawRect(0f, 0f, size.width, size.height, noisePaint) }
         }
 
-        // record: shadow + rotating bitmap + fixed sheen, all sliding together on swipe
-        Box(
-            Modifier
-                .offset { IntOffset((geo.cx - geo.r).roundToInt(), (geo.cy - geo.r).roundToInt()) }
-                .size(with(density) { geo.discPx.toDp() })
-                .graphicsLayer { translationX = swipeX },
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                drawIntoCanvas {
-                    it.nativeCanvas.drawCircle(size.width / 2f, size.height / 2f + geo.r * 0.02f, geo.r, discShadow)
-                }
+        // record: shadow + rotating bitmap + fixed sheen, all sliding together on swipe.
+        // Drawn on a full-screen canvas at absolute geo coordinates: the record is wider than the
+        // screen (it bleeds off the left edge) and a laid-out child that big gets clamped/re-centred
+        // by the parent, which would put the bitmap somewhere other than geo.cx/cy.
+        Canvas(Modifier.fillMaxSize().graphicsLayer { translationX = swipeX }) {
+            drawIntoCanvas {
+                it.nativeCanvas.drawCircle(geo.cx, geo.cy + geo.r * 0.02f, geo.r, discShadow)
             }
             shown?.let { sd ->
-                Image(
-                    bitmap = sd.bitmap,
-                    contentDescription = null,
-                    filterQuality = FilterQuality.Medium,
-                    modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = discAngle },
-                )
+                rotate(discAngle, Offset(geo.cx, geo.cy)) {
+                    drawImage(
+                        image = sd.bitmap,
+                        dstOffset = IntOffset((geo.cx - geo.r).roundToInt(), (geo.cy - geo.r).roundToInt()),
+                        dstSize = IntSize(geo.discPx, geo.discPx),
+                        filterQuality = FilterQuality.Medium,
+                    )
+                }
             }
-            Canvas(Modifier.fillMaxSize()) {
-                drawIntoCanvas { it.nativeCanvas.drawCircle(size.width / 2f, size.height / 2f, geo.r, sheen) }
+            drawIntoCanvas {
+                it.nativeCanvas.drawCircle(geo.cx, geo.cy, geo.r, sheen)
             }
         }
 
